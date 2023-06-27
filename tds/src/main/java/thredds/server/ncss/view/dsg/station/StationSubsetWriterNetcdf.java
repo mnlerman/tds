@@ -40,8 +40,8 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
       OutputStream out, NetcdfFileWriter.Version version) throws NcssException, IOException {
     super(fdPoint, ncssParams);
 
-    assert fdPoint.getPointFeatureCollectionList()
-        .size() == 1 : "Multiple feature collections cannot be written as a CF dataset";
+    //assert fdPoint.getPointFeatureCollectionList()
+      //  .size() == 1 : "Multiple feature collections cannot be written as a CF dataset";
 
     this.ncssDiskCache = ncssDiskCache;
     this.out = out;
@@ -53,13 +53,13 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
 
     // get the timeUnit and altUnit from the FeatureCollection
     CalendarDateUnit timeUnit = this.stationFeatureCollection.getTimeUnit();
+
     if (timeUnit == null) {
       timeUnit = CalendarDateUnit.unixDateUnit;
     }
     String altUnit = this.stationFeatureCollection.getAltUnits();
 
-    this.cfWriter = new WriterCFStationCollection(netcdfResult.getAbsolutePath(), attribs, wantedVariables, timeUnit,
-        altUnit, new CFPointWriterConfig(version));
+    this.cfWriter = new WriterCFStationCollection(netcdfResult.getAbsolutePath(), attribs, wantedVariables, this.stationFeatureCollection, new CFPointWriterConfig(version));
   }
 
   @Override
@@ -69,7 +69,8 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
 
   @Override
   protected void writeHeader(StationPointFeature stationPointFeat) throws Exception {
-    cfWriter.writeHeader(wantedStations, stationPointFeat);
+    //cfWriter.writeHeader(wantedStations, stationPointFeat);
+    cfWriter.writeHeader(wantedStations, stationPointFeat, wantedVariables);
   }
 
   @Override

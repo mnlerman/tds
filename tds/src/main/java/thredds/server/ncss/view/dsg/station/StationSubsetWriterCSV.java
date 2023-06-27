@@ -48,10 +48,12 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
   protected void writeHeader(StationPointFeature stationPointFeat) throws IOException {
     writer.print("time,station,latitude[unit=\"degrees_north\"],longitude[unit=\"degrees_east\"]");
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      writer.print(",");
-      writer.print(wantedVar.getShortName());
-      if (wantedVar.getUnitsString() != null)
-        writer.print("[unit=\"" + wantedVar.getUnitsString() + "\"]");
+      if(stationPointFeat.getDataAll().getMembers().stream().anyMatch(a -> a.getName().equals(wantedVar.getShortName()))){
+        writer.print(",");
+        writer.print(wantedVar.getShortName());
+        if (wantedVar.getUnitsString() != null)
+          writer.print("[unit=\"" + wantedVar.getUnitsString() + "\"]");
+      }
     }
     writer.println();
   }
@@ -69,9 +71,11 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     writer.print(Format.dfrac(station.getLongitude(), 3));
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
+      if(stationPointFeat.getDataAll().getMembers().stream().anyMatch(a -> a.getName().equals(wantedVar.getShortName()))){
       writer.print(',');
       Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
       writer.print(dataArray.toString().trim());
+      }
     }
     writer.println();
   }

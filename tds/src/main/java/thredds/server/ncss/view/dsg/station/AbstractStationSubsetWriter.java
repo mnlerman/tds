@@ -18,6 +18,7 @@ import ucar.nc2.time.CalendarDate;
 import ucar.nc2.time.CalendarDateRange;
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,6 +26,7 @@ import java.util.List;
  */
 public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
   protected final StationTimeSeriesFeatureCollection stationFeatureCollection;
+  protected final List<StationFeatureCollection> stationFeatureCollectionCol = new ArrayList<>();
   protected final List<StationFeature> wantedStations;
   protected boolean headerDone = false;
 
@@ -42,8 +44,11 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
     assert featColList.get(
         collectionIndex) instanceof StationTimeSeriesFeatureCollection : "This class only deals with StationTimeSeriesFeatureCollections.";
 
+    for(DsgFeatureCollection col : featColList){
+      this.stationFeatureCollectionCol.add((StationFeatureCollection) col);
+    }
     this.stationFeatureCollection = (StationTimeSeriesFeatureCollection) featColList.get(collectionIndex);
-    this.wantedStations = StationWriterUtils.getStationsInSubset(stationFeatureCollection, ncssParams);
+    this.wantedStations = StationWriterUtils.getStationsInSubset(stationFeatureCollectionCol, ncssParams);
 
     if (this.wantedStations.isEmpty()) {
       throw new FeaturesNotFoundException("No stations found in subset.");
@@ -55,6 +60,38 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
   protected abstract void writeStationPointFeature(StationPointFeature stationPointFeat) throws Exception;
 
   protected abstract void writeFooter() throws Exception;
+
+  //@Override
+  public void write1() throws Exception {
+    int count = 0;
+
+    for(StationFeatureCollection stationFeatureCol: this.stationFeatureCollectionCol) {
+
+      // Perform spatial subset.
+      StationTimeSeriesFeatureCollection subsettedStationFeatCol =
+              ((StationTimeSeriesFeatureCollection) stationFeatureCol).subsetFeatures(wantedStations);
+
+      for (StationTimeSeriesFeature stationFeat : subsettedStationFeatCol) {
+
+        // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
+        // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
+        // least be within an hour").
+        StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
+
+        if (ncssParams.getTime() != null) {
+          CalendarDate wantedTime = ncssParams.getTime();
+          subsettedStationFeat =
+                  new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+        }
+
+        count += writeStationTimeSeriesFeature(subsettedStationFeat);
+      }
+    }
+    if (count == 0) {
+      throw new NcssException("No features are in the requested subset");
+    }
+    writeFooter();
+  }
 
   @Override
   public void write() throws Exception {
@@ -94,7 +131,7 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
           + pointFeat.getClass().getSimpleName();
 
       if (!headerDone) {
-        writeHeader((StationPointFeature) pointFeat);
+      writeHeader((StationPointFeature) pointFeat);
         headerDone = true;
       }
       writeStationPointFeature((StationPointFeature) pointFeat);

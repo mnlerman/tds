@@ -15,6 +15,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
+import thredds.client.catalog.ThreddsMetadata;
 import thredds.core.AllowedServices;
 import thredds.core.StandardService;
 import thredds.core.TdsRequestedDataset;
@@ -199,6 +200,7 @@ public class NcssGridController extends AbstractNcssController {
 
       // all subsetting is done in CoverageAsPoint
       // SubsetParams ncssParams = params.makeSubset(gcd);
+      List<CoverageCoordAxis1D> timeAxes = covp.getAllTimeAxes();
       SubsetParams ncssParams =
           new SubsetParams().set(SubsetParams.timeAll, true).set(SubsetParams.variables, params.getVar());
       DsgSubsetWriter pds =
