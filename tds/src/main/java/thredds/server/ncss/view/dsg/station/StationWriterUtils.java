@@ -1,5 +1,6 @@
 package thredds.server.ncss.view.dsg.station;
 
+import ucar.nc2.ft.DsgFeatureCollection;
 import ucar.nc2.ft.StationFeatureCollection;
 import ucar.nc2.ft.point.StationFeature;
 import ucar.nc2.ft2.coverage.SubsetParams;
@@ -13,6 +14,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StationWriterUtils {
+
+  public static List<StationFeature> getStationsInSubset(List<DsgFeatureCollection> featureCollections,
+      SubsetParams ncssParams) {
+    List<StationFeature> wantedStations = new ArrayList<>();
+    for (DsgFeatureCollection stationFeatureCollection : featureCollections) {
+      if (ncssParams.getStations() != null) {
+        List<String> stnNames = ncssParams.getStations();
+
+        if (stnNames.get(0).equals("all")) {
+          wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
+        } else {
+          wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnNames));
+        }
+      } else if (ncssParams.getLatLonBoundingBox() != null) {
+        LatLonRect llrect = ncssParams.getLatLonBoundingBox();
+        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(llrect));
+
+      } else if (ncssParams.getLatLonPoint() != null) {
+
+        Station closestStation =
+            findClosestStation(((StationFeatureCollection) stationFeatureCollection), ncssParams.getLatLonPoint());
+        List<String> stnList = new ArrayList<>();
+        stnList.add(closestStation.getName());
+        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnList));
+      } else {
+        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
+      }
+    }
+    return wantedStations;
+  }
 
   // LOOK could do better : "all", and maybe HashSet<Name>
   public static List<StationFeature> getStationsInSubset(StationFeatureCollection stationFeatCol,
