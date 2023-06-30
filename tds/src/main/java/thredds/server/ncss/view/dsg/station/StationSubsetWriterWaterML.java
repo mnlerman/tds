@@ -48,7 +48,7 @@ public class StationSubsetWriterWaterML extends AbstractStationSubsetWriter {
   }
 
   @Override
-  protected void writeHeader(StationPointFeature stationPointFeat) throws Exception {
+  protected void writeHeader(){
     MarshallingUtil.resetIds();
 
     // @gml:id
@@ -62,7 +62,7 @@ public class StationSubsetWriterWaterML extends AbstractStationSubsetWriter {
   @Override
   protected int writeStationTimeSeriesFeature(StationTimeSeriesFeature stationFeat) throws Exception {
     if (!headerDone) {
-      writeHeader(null);
+      writeHeader();
       headerDone = true;
     }
 

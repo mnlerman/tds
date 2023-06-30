@@ -50,7 +50,8 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
     }
   }
 
-  protected abstract void writeHeader(StationPointFeature stationPointFeat) throws Exception;
+
+  abstract protected void writeHeader() throws Exception;
 
   protected abstract void writeStationPointFeature(StationPointFeature stationPointFeat) throws Exception;
 
@@ -61,24 +62,24 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
 
     // Perform spatial subset.
     StationTimeSeriesFeatureCollection subsettedStationFeatCol =
-        stationFeatureCollection.subsetFeatures(wantedStations);
+            stationFeatureCollection.subsetFeatures(wantedStations);
     int count = 0;
 
     for (StationTimeSeriesFeature stationFeat : subsettedStationFeatCol) {
 
-      // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
-      // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
-      // least be within an hour").
-      StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
+        // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
+        // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
+        // least be within an hour").
+        StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
 
-      if (ncssParams.getTime() != null) {
-        CalendarDate wantedTime = ncssParams.getTime();
-        subsettedStationFeat =
-            new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+        if (ncssParams.getTime() != null) {
+          CalendarDate wantedTime = ncssParams.getTime();
+          subsettedStationFeat =
+              new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+        }
+
+        count += writeStationTimeSeriesFeature(subsettedStationFeat);
       }
-
-      count += writeStationTimeSeriesFeature(subsettedStationFeat);
-    }
 
     if (count == 0) {
       throw new NcssException("No features are in the requested subset");
@@ -94,7 +95,7 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
           + pointFeat.getClass().getSimpleName();
 
       if (!headerDone) {
-        writeHeader((StationPointFeature) pointFeat);
+        writeHeader();
         headerDone = true;
       }
       writeStationPointFeature((StationPointFeature) pointFeat);

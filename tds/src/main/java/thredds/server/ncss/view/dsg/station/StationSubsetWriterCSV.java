@@ -45,7 +45,7 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
   }
 
   @Override
-  protected void writeHeader(StationPointFeature stationPointFeat) throws IOException {
+  protected void writeHeader() {
     writer.print("time,station,latitude[unit=\"degrees_north\"],longitude[unit=\"degrees_east\"]");
     for (VariableSimpleIF wantedVar : wantedVariables) {
       writer.print(",");

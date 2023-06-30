@@ -56,7 +56,7 @@ public class StationSubsetWriterXML extends AbstractStationSubsetWriter {
   }
 
   @Override
-  protected void writeHeader(StationPointFeature stationPointFeat) throws XMLStreamException {
+  protected void writeHeader() throws XMLStreamException {
     if (!isNested) {
       staxWriter.writeStartDocument("UTF-8", "1.0");
       staxWriter.writeCharacters("\n");

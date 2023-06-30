@@ -67,9 +67,9 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
     return HttpHeaderWriter.getHttpHeadersForNetcdf(datasetPath, ncssDiskCache, version);
   }
 
-  @Override
-  protected void writeHeader(StationPointFeature stationPointFeat) throws Exception {
-    cfWriter.writeHeader(wantedStations, stationPointFeat);
+   @Override
+  protected void writeHeader() throws IOException {
+    cfWriter.writeHeader(wantedStations);
   }
 
   @Override
