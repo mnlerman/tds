@@ -1,5 +1,6 @@
 package thredds.server.ncss.view.dsg.station;
 
+import ucar.nc2.constants.FeatureType;
 import ucar.nc2.ft.DsgFeatureCollection;
 import ucar.nc2.ft.StationFeatureCollection;
 import ucar.nc2.ft.point.StationFeature;
@@ -16,9 +17,12 @@ import java.util.List;
 public class StationWriterUtils {
 
   public static List<StationFeature> getStationsInSubset(List<DsgFeatureCollection> featureCollections,
-      SubsetParams ncssParams) {
+      SubsetParams ncssParams, FeatureType featureType) {
     List<StationFeature> wantedStations = new ArrayList<>();
     for (DsgFeatureCollection stationFeatureCollection : featureCollections) {
+      if (stationFeatureCollection.getCollectionFeatureType() != featureType)
+        continue;
+
       if (ncssParams.getStations() != null) {
         List<String> stnNames = ncssParams.getStations();
 

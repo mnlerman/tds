@@ -43,7 +43,8 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
         collectionIndex) instanceof StationTimeSeriesFeatureCollection : "This class only deals with StationTimeSeriesFeatureCollections.";
 
     this.stationFeatureCollection = (StationTimeSeriesFeatureCollection) featColList.get(collectionIndex);
-    this.wantedStations = StationWriterUtils.getStationsInSubset(featColList, ncssParams);
+    this.wantedStations = StationWriterUtils.getStationsInSubset(featColList, ncssParams,
+        stationFeatureCollection.getCollectionFeatureType());
 
     if (this.wantedStations.isEmpty()) {
       throw new FeaturesNotFoundException("No stations found in subset.");
