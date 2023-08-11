@@ -99,6 +99,15 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
         writeHeader();
         headerDone = true;
       }
+
+      //ML - I think this could be done better
+      List<String> wantedVarNames =
+          wantedVariables.stream().map(VariableSimpleIF::getShortName).collect(Collectors.toList());
+      List<String> pointMemberNames = pointFeat.getDataAll().getMembers().stream().map(StructureMembers.Member::getName)
+          .collect(Collectors.toList());
+      if (!pointMemberNames.containsAll(wantedVarNames)) {
+        continue;
+      }
       writeStationPointFeature((StationPointFeature) pointFeat);
       count++;
     }
