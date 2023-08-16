@@ -12,11 +12,15 @@ import thredds.server.ncss.view.dsg.HttpHeaderWriter;
 import ucar.nc2.VariableSimpleIF;
 import ucar.nc2.ft.FeatureDatasetPoint;
 import ucar.nc2.ft.StationTimeSeriesFeature;
+import ucar.nc2.ft.StationTimeSeriesFeatureCollection;
 import ucar.nc2.ft.point.StationPointFeature;
+import ucar.nc2.ft.point.StationTimeSeriesFeatureImpl;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.ogc.MarshallingUtil;
 import ucar.nc2.ogc.om.NcOMObservationPropertyType;
 import ucar.nc2.ogc.waterml.NcDocumentMetadataPropertyType;
+import ucar.nc2.time.CalendarDate;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -48,7 +52,7 @@ public class StationSubsetWriterWaterML extends AbstractStationSubsetWriter {
   }
 
   @Override
-  protected void writeHeader(){
+  protected void writeHeader() {
     MarshallingUtil.resetIds();
 
     // @gml:id
@@ -69,6 +73,35 @@ public class StationSubsetWriterWaterML extends AbstractStationSubsetWriter {
     for (VariableSimpleIF wantedVar : wantedVariables) {
       // wml2:observationMember
       NcOMObservationPropertyType.initObservationMember(collection.addNewObservationMember(), stationFeat, wantedVar);
+    }
+
+    return 1; // ??
+  }
+
+  @Override
+  protected int writeStationTimeSeriesFeatures(StationTimeSeriesFeatureCollection stationFeatCol) throws Exception {
+    for (StationTimeSeriesFeature stationFeat : stationFeatCol) {
+      StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
+
+      // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
+      // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
+      // least be within an hour").
+      if (ncssParams.getTime() != null) {
+        CalendarDate wantedTime = ncssParams.getTime();
+        subsettedStationFeat =
+            new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+      }
+
+      if (!headerDone) {
+        writeHeader();
+        headerDone = true;
+      }
+
+      for (VariableSimpleIF wantedVar : wantedVariables) {
+        // wml2:observationMember
+        NcOMObservationPropertyType.initObservationMember(collection.addNewObservationMember(), subsettedStationFeat,
+            wantedVar);
+      }
     }
 
     return 1; // ??

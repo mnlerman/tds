@@ -63,30 +63,34 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
 
     // Perform spatial subset.
     StationTimeSeriesFeatureCollection subsettedStationFeatCol =
-            stationFeatureCollection.subsetFeatures(wantedStations);
+        stationFeatureCollection.subsetFeatures(wantedStations);
+
+    int count = writeStationTimeSeriesFeatures(subsettedStationFeatCol);
+
+
+    if (count == 0)
+      throw new NcssException("No features are in the requested subset");
+    writeFooter();
+  }
+
+  protected int writeStationTimeSeriesFeatures(StationTimeSeriesFeatureCollection stationFeatCol) throws Exception {
     int count = 0;
 
-    for (StationTimeSeriesFeature stationFeat : subsettedStationFeatCol) {
+    for (StationTimeSeriesFeature stationFeat : stationFeatureCollection.subset(wantedStations)) {
+      // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
+      // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
+      // least be within an hour").
+      StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
 
-        // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
-        // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
-        // least be within an hour").
-        StationTimeSeriesFeature subsettedStationFeat = stationFeat.subset(wantedRange);
-
-        if (ncssParams.getTime() != null) {
-          CalendarDate wantedTime = ncssParams.getTime();
-          subsettedStationFeat =
-              new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
-        }
-
-        count += writeStationTimeSeriesFeature(subsettedStationFeat);
+      if (ncssParams.getTime() != null) {
+        CalendarDate wantedTime = ncssParams.getTime();
+        subsettedStationFeat =
+            new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
       }
 
-    if (count == 0) {
-      throw new NcssException("No features are in the requested subset");
+      count += writeStationTimeSeriesFeature(subsettedStationFeat);
     }
-
-    writeFooter();
+    return count;
   }
 
   protected int writeStationTimeSeriesFeature(StationTimeSeriesFeature stationFeat) throws Exception {
@@ -100,14 +104,6 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
         headerDone = true;
       }
 
-      //ML - I think this could be done better
-      List<String> wantedVarNames =
-          wantedVariables.stream().map(VariableSimpleIF::getShortName).collect(Collectors.toList());
-      List<String> pointMemberNames = pointFeat.getDataAll().getMembers().stream().map(StructureMembers.Member::getName)
-          .collect(Collectors.toList());
-      if (!pointMemberNames.containsAll(wantedVarNames)) {
-        continue;
-      }
       writeStationPointFeature((StationPointFeature) pointFeat);
       count++;
     }

@@ -12,12 +12,14 @@ import ucar.nc2.Attribute;
 import ucar.nc2.NetcdfFileWriter;
 import ucar.nc2.constants.CDM;
 import ucar.nc2.ft.FeatureDatasetPoint;
+import ucar.nc2.ft.StationTimeSeriesFeatureCollection;
 import ucar.nc2.ft.point.StationPointFeature;
 import ucar.nc2.ft.point.writer.CFPointWriterConfig;
 import ucar.nc2.ft.point.writer.WriterCFStationCollection;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.time.CalendarDateUnit;
 import ucar.nc2.util.IO;
+import ucar.unidata.geoloc.LatLonRect;
 import ucar.unidata.geoloc.Station;
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +40,7 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
 
   public StationSubsetWriterNetcdf(FeatureDatasetPoint fdPoint, SubsetParams ncssParams, NcssDiskCache ncssDiskCache,
       OutputStream out, NetcdfFileWriter.Version version) throws NcssException, IOException {
-    super(fdPoint, ncssParams);
+    super(fdPoint, ncssParams, 0);
 
     assert fdPoint.getPointFeatureCollectionList()
         .size() == 1 : "Multiple feature collections cannot be written as a CF dataset";
@@ -67,9 +69,9 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
     return HttpHeaderWriter.getHttpHeadersForNetcdf(datasetPath, ncssDiskCache, version);
   }
 
-   @Override
+  @Override
   protected void writeHeader() throws IOException {
-    cfWriter.writeHeader(wantedStations);
+    cfWriter.writeHeader(stationFeatureCollection);
   }
 
   @Override
@@ -83,5 +85,16 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
     cfWriter.finish();
     IO.copyFileB(netcdfResult, out, 60000); // Copy the file in to the OutputStream.
     out.flush();
+  }
+
+  @Override
+  protected int writeStationTimeSeriesFeatures(StationTimeSeriesFeatureCollection subsettedStationFeatCol)
+      throws Exception {
+
+    subsettedStationFeatCol = subsettedStationFeatCol.subset((LatLonRect) null, wantedRange);
+    cfWriter.writeHeader(subsettedStationFeatCol);
+
+    return cfWriter.writeRecords(subsettedStationFeatCol, wantedVariables);
+
   }
 }
