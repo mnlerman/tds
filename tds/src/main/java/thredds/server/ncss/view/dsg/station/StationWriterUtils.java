@@ -1,5 +1,6 @@
 package thredds.server.ncss.view.dsg.station;
 
+import ucar.ma2.StructureMembers;
 import ucar.nc2.constants.FeatureType;
 import ucar.nc2.ft.DsgFeatureCollection;
 import ucar.nc2.ft.PointFeature;
@@ -15,21 +16,23 @@ import ucar.unidata.geoloc.Station;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class StationWriterUtils {
 
   public static List<StationFeature> getStationsInSubset(List<DsgFeatureCollection> featureCollections,
-      SubsetParams ncssParams, FeatureType featureType) {
+      SubsetParams ncssParams, FeatureType featureType) throws IOException {
     List<StationFeature> wantedStations = new ArrayList<>();
     for (DsgFeatureCollection stationFeatureCollection : featureCollections) {
       if (stationFeatureCollection.getCollectionFeatureType() != featureType)
         continue;
 
+      boolean keep = true;
       for( StationFeature s: ((StationFeatureCollection) stationFeatureCollection).getStationFeatures()){
         for(PointFeature p : (PointFeatureCollection) s){
-          int j = 0;
+          keep = keep & p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
+                  .collect(Collectors.toList()).containsAll(ncssParams.getVariables());
         }
-        int i = 1;
       }
 
       if (ncssParams.getStations() != null) {
