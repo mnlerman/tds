@@ -15,47 +15,52 @@ import ucar.unidata.geoloc.Station;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class StationWriterUtils {
-
   public static List<StationFeature> getStationsInSubset(List<DsgFeatureCollection> featureCollections,
-      SubsetParams ncssParams, FeatureType featureType) throws IOException {
+                                                         SubsetParams ncssParams, FeatureType featureType) throws IOException {
     List<StationFeature> wantedStations = new ArrayList<>();
     for (DsgFeatureCollection stationFeatureCollection : featureCollections) {
       if (stationFeatureCollection.getCollectionFeatureType() != featureType)
         continue;
-
-      boolean keep = true;
-      for( StationFeature s: ((StationFeatureCollection) stationFeatureCollection).getStationFeatures()){
-        for(PointFeature p : (PointFeatureCollection) s){
-          keep = keep & p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
-                  .collect(Collectors.toList()).containsAll(ncssParams.getVariables());
-        }
-      }
-
+      List<StationFeature> filteredStations = new ArrayList<>();
       if (ncssParams.getStations() != null) {
         List<String> stnNames = ncssParams.getStations();
 
         if (stnNames.get(0).equals("all")) {
-          wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
+          filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
         } else {
-          wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnNames));
+          filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnNames));
         }
       } else if (ncssParams.getLatLonBoundingBox() != null) {
         LatLonRect llrect = ncssParams.getLatLonBoundingBox();
-        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(llrect));
+        filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(llrect));
 
       } else if (ncssParams.getLatLonPoint() != null) {
 
         Station closestStation =
-            findClosestStation(((StationFeatureCollection) stationFeatureCollection), ncssParams.getLatLonPoint());
+                findClosestStation(((StationFeatureCollection) stationFeatureCollection), ncssParams.getLatLonPoint());
         List<String> stnList = new ArrayList<>();
         stnList.add(closestStation.getName());
-        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnList));
+        filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnList));
       } else {
-        wantedStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
+        filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
+      }
+
+      for( StationFeature station: filteredStations){
+        boolean hasVariables = true;
+        Iterator<PointFeature> pointIterator = ((PointFeatureCollection) station).getPointFeatureIterator();
+        while(hasVariables && pointIterator.hasNext()){
+          PointFeature p = pointIterator.next();
+          hasVariables = p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
+                 .collect(Collectors.toSet()).containsAll(ncssParams.getVariables());
+        }
+        if(hasVariables){
+          wantedStations.add(station);
+        }
       }
     }
     return wantedStations;
@@ -92,12 +97,6 @@ public class StationWriterUtils {
     return wantedStations;
   }
 
-  /**
-   * @param stationFeatCol
-   * @param pt
-   * @return
-   * @throws IOException
-   */
   /**
    * Find the station closest to the specified point.
    * The metric is (lat-lat0)**2 + (cos(lat0)*(lon-lon0))**2
