@@ -15,6 +15,7 @@ import ucar.unidata.geoloc.Station;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,8 +56,8 @@ public class StationWriterUtils {
         Iterator<PointFeature> pointIterator = ((PointFeatureCollection) station).getPointFeatureIterator();
         while(hasVariables && pointIterator.hasNext()){
           PointFeature p = pointIterator.next();
-          hasVariables = p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
-                 .collect(Collectors.toSet()).containsAll(ncssParams.getVariables());
+          hasVariables = !Collections.disjoint(p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
+                 .collect(Collectors.toSet()), ncssParams.getVariables());
         }
         if(hasVariables){
           wantedStations.add(station);
