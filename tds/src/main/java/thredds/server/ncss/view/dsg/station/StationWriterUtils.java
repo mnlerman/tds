@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class StationWriterUtils {
   public static List<StationFeature> getStationsInSubset(List<DsgFeatureCollection> featureCollections,
-                                                         SubsetParams ncssParams, FeatureType featureType) throws IOException {
+      SubsetParams ncssParams, FeatureType featureType) throws IOException {
     List<StationFeature> wantedStations = new ArrayList<>();
     for (DsgFeatureCollection stationFeatureCollection : featureCollections) {
       if (stationFeatureCollection.getCollectionFeatureType() != featureType)
@@ -43,7 +43,7 @@ public class StationWriterUtils {
       } else if (ncssParams.getLatLonPoint() != null) {
 
         Station closestStation =
-                findClosestStation(((StationFeatureCollection) stationFeatureCollection), ncssParams.getLatLonPoint());
+            findClosestStation(((StationFeatureCollection) stationFeatureCollection), ncssParams.getLatLonPoint());
         List<String> stnList = new ArrayList<>();
         stnList.add(closestStation.getName());
         filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures(stnList));
@@ -51,15 +51,15 @@ public class StationWriterUtils {
         filteredStations.addAll(((StationFeatureCollection) stationFeatureCollection).getStationFeatures());
       }
 
-      for( StationFeature station: filteredStations){
+      for (StationFeature station : filteredStations) {
         boolean hasVariables = true;
-        Iterator<PointFeature> pointIterator = ((PointFeatureCollection) station).getPointFeatureIterator();
-        while(hasVariables && pointIterator.hasNext()){
+        Iterator<PointFeature> pointIterator = ((PointFeatureCollection) station).iterator();
+        while (hasVariables && pointIterator.hasNext()) {
           PointFeature p = pointIterator.next();
-          hasVariables = !Collections.disjoint(p.getFeatureData().getMembers().stream().map(StructureMembers.Member::getName)
-                 .collect(Collectors.toSet()), ncssParams.getVariables());
+           hasVariables = !Collections.disjoint(p.getFeatureData().getMembers().stream()
+           .map(StructureMembers.Member::getName).collect(Collectors.toSet()), ncssParams.getVariables());
         }
-        if(hasVariables){
+        if (hasVariables) {
           wantedStations.add(station);
         }
       }
