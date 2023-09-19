@@ -15,6 +15,8 @@ import thredds.server.ncss.view.dsg.HttpHeaderWriter;
 import ucar.ma2.Array;
 import ucar.nc2.VariableSimpleIF;
 import ucar.nc2.ft.FeatureDatasetPoint;
+import ucar.nc2.ft.PointFeature;
+import ucar.nc2.ft.StationTimeSeriesFeature;
 import ucar.nc2.ft.point.StationPointFeature;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.time.CalendarDateFormatter;
@@ -56,6 +58,19 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     writer.println();
   }
 
+  protected void writeHeader(PointFeature pointFeat) throws IOException {
+    writer.print("time,station,latitude[unit=\"degrees_north\"],longitude[unit=\"degrees_east\"]");
+    for (VariableSimpleIF wantedVar : wantedVariables) {
+      if(pointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
+        writer.print(",");
+        writer.print(wantedVar.getShortName());
+        if (wantedVar.getUnitsString() != null)
+          writer.print("[unit=\"" + wantedVar.getUnitsString() + "\"]");
+      }
+    }
+    writer.println();
+  }
+
   @Override
   protected void writeStationPointFeature(StationPointFeature stationPointFeat) throws IOException {
     Station station = stationPointFeat.getStation();
@@ -69,13 +84,33 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     writer.print(Format.dfrac(station.getLongitude(), 3));
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      writer.print(',');
-      Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
-      writer.print(dataArray.toString().trim());
+      if (stationPointFeat.getFeatureData().findMember(wantedVar.getShortName()) != null) {
+        writer.print(',');
+        Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
+        writer.print(dataArray.toString().trim());
+      }
     }
     writer.println();
   }
 
+  @Override
+  protected int writeStationTimeSeriesFeature(StationTimeSeriesFeature stationFeat) throws Exception {
+    int count = 0;
+    headerDone = false;
+    for (PointFeature pointFeat : stationFeat) {
+      assert pointFeat instanceof StationPointFeature : "Expected pointFeat to be a StationPointFeature, not a "
+              + pointFeat.getClass().getSimpleName();
+
+      if (!headerDone) {
+        writeHeader(pointFeat);
+        headerDone = true;
+      }
+
+      writeStationPointFeature((StationPointFeature) pointFeat);
+      count++;
+    }
+    return count;
+  }
   @Override
   protected void writeFooter() throws IOException {
     writer.flush();
