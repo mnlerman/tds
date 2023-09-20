@@ -52,7 +52,7 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
   }
 
 
-  abstract protected void writeHeader() throws Exception;
+  protected abstract void writeHeader() throws Exception;
 
   protected abstract void writeStationPointFeature(StationPointFeature stationPointFeat) throws Exception;
 
