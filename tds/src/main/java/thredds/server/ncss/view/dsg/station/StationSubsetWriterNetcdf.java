@@ -40,7 +40,7 @@ public class StationSubsetWriterNetcdf extends AbstractStationSubsetWriter {
 
   public StationSubsetWriterNetcdf(FeatureDatasetPoint fdPoint, SubsetParams ncssParams, NcssDiskCache ncssDiskCache,
       OutputStream out, NetcdfFileWriter.Version version) throws NcssException, IOException {
-    super(fdPoint, ncssParams, 0);
+    super(fdPoint, ncssParams);
 
     assert fdPoint.getPointFeatureCollectionList().stream().allMatch(x -> x.getCollectionFeatureType() == fdPoint.getFeatureType())
         : "Multiple feature collection types cannot be written as a CF dataset";
