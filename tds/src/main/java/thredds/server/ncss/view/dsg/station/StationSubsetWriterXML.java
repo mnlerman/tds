@@ -87,22 +87,25 @@ public class StationSubsetWriterXML extends AbstractStationSubsetWriter {
     staxWriter.writeEndElement();
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      staxWriter.writeCharacters("\n        ");
-      staxWriter.writeStartElement("data");
-      staxWriter.writeAttribute("name", wantedVar.getShortName());
-      if (wantedVar.getUnitsString() != null) {
-        staxWriter.writeAttribute(CDM.UNITS, wantedVar.getUnitsString());
-      }
+      if(stationPointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
+        staxWriter.writeCharacters("\n        ");
+        staxWriter.writeStartElement("data");
+        staxWriter.writeAttribute("name", wantedVar.getShortName());
+        if (wantedVar.getUnitsString() != null) {
+          staxWriter.writeAttribute(CDM.UNITS, wantedVar.getUnitsString());
+        }
 
-      Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
-      String ss = dataArray.toString();
-      Class elemType = dataArray.getElementType();
-      if ((elemType == String.class) || (elemType == char.class) || (elemType == StructureData.class)) {
-        ss = ucar.nc2.util.xml.Parse.cleanCharacterData(ss); // make sure no bad chars
-      }
-      staxWriter.writeCharacters(ss.trim());
+        Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
+        String ss = dataArray.toString();
+        Class elemType = dataArray.getElementType();
+        if ((elemType == String.class) || (elemType == char.class) || (elemType == StructureData.class)) {
+          ss = ucar.nc2.util.xml.Parse.cleanCharacterData(ss); // make sure no bad chars
+        }
+        staxWriter.writeCharacters(ss.trim());
       staxWriter.writeEndElement();
     }
+    }
+
 
     staxWriter.writeCharacters("\n    ");
     staxWriter.writeEndElement();
