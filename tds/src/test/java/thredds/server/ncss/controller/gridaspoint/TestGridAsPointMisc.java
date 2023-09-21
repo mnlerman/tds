@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -23,10 +24,14 @@ import org.springframework.web.context.WebApplicationContext;
 import thredds.mock.web.MockTdsContextLoader;
 import thredds.server.ncss.format.SupportedFormat;
 import thredds.server.ncss.format.SupportedOperation;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.NetcdfFiles;
 import ucar.unidata.util.test.category.NeedsCdmUnitTest;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static com.google.common.truth.Truth.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -100,6 +105,45 @@ public class TestGridAsPointMisc {
       MvcResult mvcResult = this.mockMvc.perform(rb).andExpect(MockMvcResultMatchers.status().isOk()).andReturn();
       String ct = mvcResult.getResponse().getContentType();
       Assert.assertTrue(ct.startsWith(sf.getMimeType()));
+    }
+  }
+
+  @Test
+  public void getGridAsPointTwoTimeAxesAllSupportedFormats() throws Exception {
+    for (SupportedFormat sf : new SupportedFormat[] {SupportedFormat.NETCDF3, SupportedFormat.NETCDF4,
+        SupportedFormat.CSV_FILE, SupportedFormat.CSV_STREAM, SupportedFormat.XML_FILE, SupportedFormat.XML_STREAM}) {
+      RequestBuilder rb = MockMvcRequestBuilders.get("/ncss/grid/testGFSfmrc/GFS_CONUS_80km_nc_best.ncd")
+          .servletPath("/ncss/grid/testGFSfmrc/GFS_CONUS_80km_nc_best.ncd").param("accept", sf.toString())
+          .param("var", "Pressure", "Total_precipitation").param("latitude", "40.019").param("longitude", "-105.293");
+
+      System.out.printf("getGridAsPointAndProfileSubsetAllSupportedFormats return type=%s%n", sf);
+
+      MvcResult mvcResult = this.mockMvc.perform(rb).andExpect(MockMvcResultMatchers.status().isOk()).andReturn();
+      String ct = mvcResult.getResponse().getContentType();
+      assertThat(ct).isNotNull();
+      assertThat(ct).startsWith(sf.getMimeType());
+    }
+  }
+
+  @Test
+  public void getGridAsPointDifferentTimeAxesNetcdf() throws Exception {
+    for (SupportedFormat sf : new SupportedFormat[] {SupportedFormat.NETCDF3, SupportedFormat.NETCDF4}) {
+      RequestBuilder rb = MockMvcRequestBuilders.get("/ncss/grid/testGFSfmrc/GFS_CONUS_80km_nc_best.ncd")
+          .servletPath("/ncss/grid/testGFSfmrc/GFS_CONUS_80km_nc_best.ncd").param("accept", sf.toString())
+          .param("var", "Pressure", "Total_precipitation").param("latitude", "40.019").param("longitude", "-105.293")
+          .param("time", "2012-04-19T18:00:00Z");
+
+
+      MvcResult mvcResult = this.mockMvc.perform(rb).andExpect(MockMvcResultMatchers.status().isOk()).andReturn();
+      MockHttpServletResponse response = mvcResult.getResponse();
+      String ct = response.getContentType();
+      assertThat(ct).startsWith(sf.getMimeType());
+
+      try (NetcdfFile nf = NetcdfFiles.openInMemory("test_data.ncs", response.getContentAsByteArray())) {
+        assertThat((Iterable<?>) nf.findVariable("Pressure")).isNotNull();
+        assertThat((Iterable<?>) nf.findVariable("Total_precipitation")).isNotNull();
+      }
+
     }
   }
 }
