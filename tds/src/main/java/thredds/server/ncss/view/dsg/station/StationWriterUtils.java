@@ -56,8 +56,8 @@ public class StationWriterUtils {
         Iterator<PointFeature> pointIterator = ((PointFeatureCollection) station).iterator();
         while (hasVariables && pointIterator.hasNext()) {
           PointFeature p = pointIterator.next();
-           hasVariables = !Collections.disjoint(p.getFeatureData().getMembers().stream()
-           .map(StructureMembers.Member::getName).collect(Collectors.toSet()), ncssParams.getVariables());
+          hasVariables = !Collections.disjoint(p.getFeatureData().getMembers().stream()
+              .map(StructureMembers.Member::getName).collect(Collectors.toSet()), ncssParams.getVariables());
         }
         if (hasVariables) {
           wantedStations.add(station);

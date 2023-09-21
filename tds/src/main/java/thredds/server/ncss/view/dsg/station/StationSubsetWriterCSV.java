@@ -61,7 +61,7 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
   protected void writeHeader(PointFeature pointFeat) throws IOException {
     writer.print("time,station,latitude[unit=\"degrees_north\"],longitude[unit=\"degrees_east\"]");
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      if(pointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
+      if (pointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
         writer.print(",");
         writer.print(wantedVar.getShortName());
         if (wantedVar.getUnitsString() != null)
@@ -99,7 +99,7 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     headerDone = false;
     for (PointFeature pointFeat : stationFeat) {
       assert pointFeat instanceof StationPointFeature : "Expected pointFeat to be a StationPointFeature, not a "
-              + pointFeat.getClass().getSimpleName();
+          + pointFeat.getClass().getSimpleName();
 
       if (!headerDone) {
         writeHeader(pointFeat);
@@ -111,6 +111,7 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     }
     return count;
   }
+
   @Override
   protected void writeFooter() throws IOException {
     writer.flush();

@@ -87,7 +87,7 @@ public class StationSubsetWriterXML extends AbstractStationSubsetWriter {
     staxWriter.writeEndElement();
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      if(stationPointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
+      if (stationPointFeat.getDataAll().findMember(wantedVar.getShortName()) != null) {
         staxWriter.writeCharacters("\n        ");
         staxWriter.writeStartElement("data");
         staxWriter.writeAttribute("name", wantedVar.getShortName());
@@ -102,8 +102,8 @@ public class StationSubsetWriterXML extends AbstractStationSubsetWriter {
           ss = ucar.nc2.util.xml.Parse.cleanCharacterData(ss); // make sure no bad chars
         }
         staxWriter.writeCharacters(ss.trim());
-      staxWriter.writeEndElement();
-    }
+        staxWriter.writeEndElement();
+      }
     }
 
 
