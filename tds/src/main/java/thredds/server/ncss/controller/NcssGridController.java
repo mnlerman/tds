@@ -200,7 +200,7 @@ public class NcssGridController extends AbstractNcssController {
 
       // all subsetting is done in CoverageAsPoint
       // SubsetParams ncssParams = params.makeSubset(gcd);
-      List<CoverageCoordAxis1D> timeAxes = covp.getAllTimeAxes();
+      //List<CoverageCoordAxis1D> timeAxes = covp.getAllTimeAxes();
       SubsetParams ncssParams =
           new SubsetParams().set(SubsetParams.timeAll, true).set(SubsetParams.variables, params.getVar());
       DsgSubsetWriter pds =
