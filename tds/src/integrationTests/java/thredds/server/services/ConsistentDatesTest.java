@@ -167,7 +167,7 @@ public class ConsistentDatesTest {
     NetcdfFile nf = NetcdfFiles.openInMemory("test_data.ncs", result);
     NetcdfDataset ds = NetcdfDatasets.enhance(nf, NetcdfDataset.getDefaultEnhanceMode(), null);
 
-    CoordinateAxis1D tAxis = (CoordinateAxis1D) ds.findCoordinateAxis("time");
+    CoordinateAxis1D tAxis = (CoordinateAxis1D) ds.findCoordinateAxis("TIME");
     Attribute calendarAtt = tAxis.findAttribute(CF.CALENDAR);
     Calendar calendar;
     if (calendarAtt == null) {
