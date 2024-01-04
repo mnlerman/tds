@@ -55,6 +55,7 @@ public class StationProfileSubsetWriterXML extends AbstractStationProfileSubsetW
       staxWriter.writeCharacters("\n");
     }
     staxWriter.writeStartElement("stationProfileFeatureCollection");
+    headerDone = true;
   }
 
   @Override

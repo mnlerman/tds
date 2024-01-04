@@ -11,8 +11,11 @@ import thredds.server.ncss.exception.NcssException;
 import thredds.server.ncss.view.dsg.HttpHeaderWriter;
 import ucar.nc2.VariableSimpleIF;
 import ucar.nc2.ft.FeatureDatasetPoint;
+import ucar.nc2.ft.PointFeature;
+import ucar.nc2.ft.PointFeatureCollection;
 import ucar.nc2.ft.StationTimeSeriesFeature;
 import ucar.nc2.ft.point.StationPointFeature;
+import ucar.nc2.ft.point.remote.PointStreamProto;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.ogc.MarshallingUtil;
 import ucar.nc2.ogc.om.NcOMObservationPropertyType;
@@ -60,7 +63,7 @@ public class StationSubsetWriterWaterML extends AbstractStationSubsetWriter {
   }
 
   @Override
-  protected int writeStationTimeSeriesFeature(StationTimeSeriesFeature stationFeat) throws Exception {
+  protected int writeStationTimeSeriesFeature(PointFeatureCollection stationFeat) throws Exception {
     if (!headerDone) {
       writeHeader(null);
       headerDone = true;

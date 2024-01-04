@@ -49,6 +49,7 @@ public class StationProfileSubsetWriterCSV extends AbstractStationProfileSubsetW
       if (wantedVar.getUnitsString() != null)
         writer.print("[unit=\"" + wantedVar.getUnitsString() + "\"]");
     }
+    headerDone = true;
     writer.println();
   }
 

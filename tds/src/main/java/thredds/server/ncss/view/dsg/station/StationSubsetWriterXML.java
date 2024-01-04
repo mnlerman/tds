@@ -87,6 +87,8 @@ public class StationSubsetWriterXML extends AbstractStationSubsetWriter {
     staxWriter.writeEndElement();
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
+      if(stationPointFeat.getDataAll().findMember(wantedVar.getShortName()) == null)
+        continue;
       staxWriter.writeCharacters("\n        ");
       staxWriter.writeStartElement("data");
       staxWriter.writeAttribute("name", wantedVar.getShortName());

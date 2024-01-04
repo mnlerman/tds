@@ -48,7 +48,7 @@ public class PointSubsetWriterNetcdf extends AbstractPointSubsetWriter {
 
     this.netcdfResult = ncssDiskCache.getDiskCache().createUniqueFile("ncss-point", ".nc");
     List<Attribute> attribs = new ArrayList<>();
-    attribs.add(new Attribute(CDM.TITLE, "Extracted data from TDS Feature Collection " + fdPoint.getLocation()));
+    attribs.add(new Attribute(CDM.TITLE, "Extracted data from TDS Feature Collection"));
 
     // get the timeUnit and altUnit from the FeatureCollection
     CalendarDateUnit timeUnit = this.pointFeatureCollection.getTimeUnit();

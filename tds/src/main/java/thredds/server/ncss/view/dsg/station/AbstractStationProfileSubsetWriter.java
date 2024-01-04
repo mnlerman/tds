@@ -14,11 +14,11 @@ import ucar.nc2.util.IOIterator;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AbstractStationProfileSubsetWriter extends DsgSubsetWriter {
   protected final StationProfileFeatureCollection stationFeatureCollection;
   protected final List<StationFeature> wantedStations;
-  protected boolean headerDone = false;
 
   public AbstractStationProfileSubsetWriter(FeatureDatasetPoint fdPoint, SubsetParams ncssParams)
       throws NcssException, IOException {
@@ -57,19 +57,22 @@ public abstract class AbstractStationProfileSubsetWriter extends DsgSubsetWriter
 
   protected abstract void writeFooter() throws Exception;
 
+  protected boolean headerDone = false;
+
   @Override
   public void write() throws Exception {
-    // Perform spatial subset
-    StationFeatureCollection subsettedStationFeatCol = stationFeatureCollection.subset(wantedStations);
     int count = 0;
 
-    for (StationFeature profileFeat : subsettedStationFeatCol.getStationFeatures()) {
-      assert profileFeat instanceof StationProfileFeature : "Expected StationProfileFeature, not "
-          + profileFeat.getClass().toString();
+    for (StationFeature station : wantedStations.stream().filter(x -> ((DsgFeatureCollection) x).getCollectionFeatureType() == stationFeatureCollection.getCollectionFeatureType()).collect(Collectors.toList())) {
+      assert station instanceof StationProfileFeature : "Expected StationProfileFeature, not "
+          + station.getClass().toString();
+      if (!headerDone) {
+        writeHeader((StationProfileFeature) station);
+      }
       // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
       // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at least be
       // within an hour").
-      StationProfileFeature subsettedStationProfileFeat = ((StationProfileFeature) profileFeat);
+      StationProfileFeature subsettedStationProfileFeat = ((StationProfileFeature) station);
       if (wantedRange != null) {
         subsettedStationProfileFeat = subsettedStationProfileFeat.subset(wantedRange);
       }
@@ -91,10 +94,6 @@ public abstract class AbstractStationProfileSubsetWriter extends DsgSubsetWriter
   }
 
   protected int writeStationProfileTimeSeriesFeature(StationProfileFeature stationProfileFeat) throws Exception {
-    if (!headerDone) {
-      writeHeader(stationProfileFeat);
-      headerDone = true;
-    }
     // iterate profiles
     int count = 0;
     for (ProfileFeature profileFeat : stationProfileFeat) {

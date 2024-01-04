@@ -16,26 +16,25 @@ public class StationWriterUtils {
 
   // LOOK could do better : "all", and maybe HashSet<Name>
   public static List<StationFeature> getStationsInSubset(List<StationFeatureCollection> stationFeatColCol,
-                                                         SubsetParams ncssParams) throws IOException {
+      SubsetParams ncssParams) throws IOException {
     List<StationFeature> wantedStations = new ArrayList<>();
     if (ncssParams.getStations() != null) {
       List<String> stnNames = ncssParams.getStations();
 
-    for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
-      if (stnNames.get(0).equals("all")) {
-        wantedStations.addAll(stationFeatureCollection.getStationFeatures());
+      for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
+        if (stnNames.get(0).equals("all")) {
+          wantedStations.addAll(stationFeatureCollection.getStationFeatures());
+        } else {
+          wantedStations.addAll(stationFeatureCollection.getStationFeatures(stnNames));
+        }
       }
-      else{
-        wantedStations.addAll(stationFeatureCollection.getStationFeatures(stnNames));
-      }
-    }
-  } else if (ncssParams.getLatLonBoundingBox() != null) {
+    } else if (ncssParams.getLatLonBoundingBox() != null) {
       LatLonRect llrect = ncssParams.getLatLonBoundingBox();
       for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
         wantedStations.addAll(stationFeatureCollection.getStationFeatures(llrect));
 
       }
-      } else if (ncssParams.getLatLonPoint() != null) {
+    } else if (ncssParams.getLatLonPoint() != null) {
       for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
 
         Station closestStation = findClosestStation(stationFeatureCollection, ncssParams.getLatLonPoint());
@@ -43,13 +42,14 @@ public class StationWriterUtils {
         stnList.add(closestStation.getName());
         wantedStations.addAll(stationFeatureCollection.getStationFeatures(stnList));
       }
-    }else{
-        for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
-            wantedStations.addAll(stationFeatureCollection.getStationFeatures());
-          }
+    } else {
+      for (StationFeatureCollection stationFeatureCollection : stationFeatColCol) {
+        wantedStations.addAll(stationFeatureCollection.getStationFeatures());
       }
+    }
     return wantedStations;
   }
+
   // LOOK could do better : "all", and maybe HashSet<Name>
   public static List<StationFeature> getStationsInSubset(StationFeatureCollection stationFeatCol,
       SubsetParams ncssParams) throws IOException {

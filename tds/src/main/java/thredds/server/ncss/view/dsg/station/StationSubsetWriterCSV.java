@@ -9,14 +9,22 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpHeaders;
 import thredds.server.ncss.exception.NcssException;
 import thredds.server.ncss.view.dsg.HttpHeaderWriter;
 import ucar.ma2.Array;
 import ucar.nc2.VariableSimpleIF;
-import ucar.nc2.ft.FeatureDatasetPoint;
+import ucar.nc2.ft.*;
+import ucar.nc2.ft.point.StationFeature;
 import ucar.nc2.ft.point.StationPointFeature;
+import ucar.nc2.ft.point.StationTimeSeriesFeatureImpl;
+import ucar.nc2.ft.point.remote.PointStreamProto;
 import ucar.nc2.ft2.coverage.SubsetParams;
+import ucar.nc2.time.CalendarDate;
 import ucar.nc2.time.CalendarDateFormatter;
 import ucar.unidata.geoloc.Station;
 import ucar.unidata.util.Format;
@@ -48,7 +56,8 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
   protected void writeHeader(StationPointFeature stationPointFeat) throws IOException {
     writer.print("time,station,latitude[unit=\"degrees_north\"],longitude[unit=\"degrees_east\"]");
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      if(stationPointFeat.getDataAll().getMembers().stream().anyMatch(a -> a.getName().equals(wantedVar.getShortName()))){
+      if (stationPointFeat.getDataAll().getMembers().stream()
+          .anyMatch(a -> a.getName().equals(wantedVar.getShortName()))) {
         writer.print(",");
         writer.print(wantedVar.getShortName());
         if (wantedVar.getUnitsString() != null)
@@ -56,6 +65,57 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
       }
     }
     writer.println();
+  }
+
+  @Override
+  public void write() throws Exception {
+    int count = 0;
+
+    for (StationFeatureCollection stationFeatureCol : this.stationFeatureCollectionCol) {
+      headerDone = false;
+
+      List<String> stnNames = wantedStations.stream().filter(x -> ((DsgFeatureCollection) x).getCollectionFeatureType() == stationFeatureCollection.getCollectionFeatureType()).map(y -> y.getName()).collect(Collectors.toList());
+      // Perform spatial subset.
+      List<StationFeature> subsettedStationFeatCol = stationFeatureCol.getStationFeatures(wantedStations.stream().map(x -> x.getName()).collect(Collectors.toList()));
+//      StationTimeSeriesFeatureCollection subsettedStationFeatCol = ((StationTimeSeriesFeatureCollection) stationFeatureCol).subsetFeatures(wantedStations);
+
+      for (StationFeature stationFeat : subsettedStationFeatCol) {
+
+        // Perform temporal subset. We do this even when a time instant is specified, in which case wantedRange
+        // represents a sanity check (i.e. "give me the feature closest to the specified time, but it must at
+        // least be within an hour").
+        StationProfileFeature subsettedStationFeat = ((StationProfileFeature) stationFeat).subset(wantedRange);
+
+        if (ncssParams.getTime() != null) {
+          CalendarDate wantedTime = ncssParams.getTime();
+          subsettedStationFeat =
+                  new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+        }
+
+        count += writeStationTimeSeriesFeature(subsettedStationFeat);
+      }
+    }
+    if (count == 0) {
+      throw new NcssException("No features are in the requested subset");
+    }
+    writeFooter();
+  }
+
+  @Override
+  protected int writeStationTimeSeriesFeature(PointFeatureCollection stationFeat) throws Exception {
+    int count = 0;
+    //headerDone = false;
+    for (PointFeature pointFeat : stationFeat) {
+      assert pointFeat instanceof StationPointFeature : "Expected pointFeat to be a StationPointFeature, not a "
+          + pointFeat.getClass().getSimpleName();
+      if (!headerDone) {
+        writeHeader((StationPointFeature) pointFeat);
+        headerDone = true;
+      }
+      writeStationPointFeature((StationPointFeature) pointFeat);
+      count++;
+    }
+    return count;
   }
 
   @Override
@@ -71,10 +131,11 @@ public class StationSubsetWriterCSV extends AbstractStationSubsetWriter {
     writer.print(Format.dfrac(station.getLongitude(), 3));
 
     for (VariableSimpleIF wantedVar : wantedVariables) {
-      if(stationPointFeat.getDataAll().getMembers().stream().anyMatch(a -> a.getName().equals(wantedVar.getShortName()))){
-      writer.print(',');
-      Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
-      writer.print(dataArray.toString().trim());
+      if (stationPointFeat.getDataAll().getMembers().stream()
+          .anyMatch(a -> a.getName().equals(wantedVar.getShortName()))) {
+        writer.print(',');
+        Array dataArray = stationPointFeat.getDataAll().getArray(wantedVar.getShortName());
+        writer.print(dataArray.toString().trim());
       }
     }
     writer.println();

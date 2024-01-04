@@ -4,6 +4,8 @@
  */
 package thredds.server.ncss.view.dsg.station;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 import thredds.server.ncss.exception.FeaturesNotFoundException;
 import thredds.server.ncss.exception.NcssException;
 import thredds.server.ncss.view.dsg.DsgSubsetWriter;
@@ -13,6 +15,7 @@ import ucar.nc2.ft.point.PointIteratorFiltered;
 import ucar.nc2.ft.point.StationFeature;
 import ucar.nc2.ft.point.StationPointFeature;
 import ucar.nc2.ft.point.StationTimeSeriesFeatureImpl;
+import ucar.nc2.ft.point.remote.PointStreamProto;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.time.CalendarDate;
 import ucar.nc2.time.CalendarDateRange;
@@ -20,6 +23,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by cwardgar on 2014/05/20.
@@ -44,7 +48,7 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
     assert featColList.get(
         collectionIndex) instanceof StationTimeSeriesFeatureCollection : "This class only deals with StationTimeSeriesFeatureCollections.";
 
-    for(DsgFeatureCollection col : featColList){
+    for (DsgFeatureCollection col : featColList) {
       this.stationFeatureCollectionCol.add((StationFeatureCollection) col);
     }
     this.stationFeatureCollection = (StationTimeSeriesFeatureCollection) featColList.get(collectionIndex);
@@ -61,15 +65,14 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
 
   protected abstract void writeFooter() throws Exception;
 
-  //@Override
-  public void write1() throws Exception {
+  @Override
+  public void write() throws Exception {
     int count = 0;
 
-    for(StationFeatureCollection stationFeatureCol: this.stationFeatureCollectionCol) {
-
+    for (StationFeatureCollection stationFeatureCol : this.stationFeatureCollectionCol) {
       // Perform spatial subset.
       StationTimeSeriesFeatureCollection subsettedStationFeatCol =
-              ((StationTimeSeriesFeatureCollection) stationFeatureCol).subsetFeatures(wantedStations);
+              ((StationTimeSeriesFeatureCollection) stationFeatureCol).subsetFeatures(wantedStations.stream().filter(x -> ((DsgFeatureCollection) x).getCollectionFeatureType() == stationFeatureCollection.getCollectionFeatureType()).collect(Collectors.toList()));
 
       for (StationTimeSeriesFeature stationFeat : subsettedStationFeatCol) {
 
@@ -81,7 +84,7 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
         if (ncssParams.getTime() != null) {
           CalendarDate wantedTime = ncssParams.getTime();
           subsettedStationFeat =
-                  new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
+              new ClosestTimeStationFeatureSubset((StationTimeSeriesFeatureImpl) subsettedStationFeat, wantedTime);
         }
 
         count += writeStationTimeSeriesFeature(subsettedStationFeat);
@@ -93,12 +96,12 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
     writeFooter();
   }
 
-  @Override
-  public void write() throws Exception {
+  //@Override
+  public void write1() throws Exception {
 
     // Perform spatial subset.
     StationTimeSeriesFeatureCollection subsettedStationFeatCol =
-        stationFeatureCollection.subsetFeatures(wantedStations);
+        stationFeatureCollection.subsetFeatures(wantedStations.stream().filter(x -> ((DsgFeatureCollection) x).getCollectionFeatureType() == stationFeatureCollection.getCollectionFeatureType()).collect(Collectors.toList()));
     int count = 0;
 
     for (StationTimeSeriesFeature stationFeat : subsettedStationFeatCol) {
@@ -124,19 +127,32 @@ public abstract class AbstractStationSubsetWriter extends DsgSubsetWriter {
     writeFooter();
   }
 
-  protected int writeStationTimeSeriesFeature(StationTimeSeriesFeature stationFeat) throws Exception {
+  protected int writeStationTimeSeriesFeature(PointFeatureCollection stationFeat) throws Exception {
     int count = 0;
+    if (!headerDone) {
+      writeHeader(null);
+      headerDone = true;
+    }
     for (PointFeature pointFeat : stationFeat) {
       assert pointFeat instanceof StationPointFeature : "Expected pointFeat to be a StationPointFeature, not a "
           + pointFeat.getClass().getSimpleName();
-
-      if (!headerDone) {
-      writeHeader((StationPointFeature) pointFeat);
-        headerDone = true;
-      }
       writeStationPointFeature((StationPointFeature) pointFeat);
       count++;
     }
+
+    /*
+     * assert pointFeat instanceof StationPointFeature : "Expected pointFeat to be a StationPointFeature, not a "
+     * + pointFeat.getClass().getSimpleName();
+     * 
+     * if (!headerDone) {
+     * writeHeader(null);
+     * headerDone = true;
+     * }
+     * writeStationPointFeature((StationPointFeature) pointFeat);
+     * count++;
+     */
+
+
     return count;
   }
 

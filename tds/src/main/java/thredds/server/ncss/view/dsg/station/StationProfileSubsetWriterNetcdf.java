@@ -12,6 +12,7 @@ import ucar.nc2.ft.point.StationFeature;
 import ucar.nc2.ft.point.StationPointFeature;
 import ucar.nc2.ft.point.writer.CFPointWriterConfig;
 import ucar.nc2.ft.point.writer.WriterCFStationProfileCollection;
+import ucar.nc2.ft.point.writer2.CFPointWriter;
 import ucar.nc2.ft2.coverage.SubsetParams;
 import ucar.nc2.time.CalendarDateUnit;
 import ucar.nc2.util.IO;
@@ -44,7 +45,7 @@ public class StationProfileSubsetWriterNetcdf extends AbstractStationProfileSubs
 
     this.netcdfResult = ncssDiskCache.getDiskCache().createUniqueFile("ncss-station", ".nc");
     List<Attribute> attribs = new ArrayList<>();
-    attribs.add(new Attribute(CDM.TITLE, "Extracted data from TDS Feature Collection " + fdPoint.getLocation()));
+    attribs.add(new Attribute(CDM.TITLE, "Extracted data from TDS Feature Collection"));
 
     String altUnits = stationFeatureCollection.getAltUnits();
     CalendarDateUnit timeUnit = stationFeatureCollection.getTimeUnit();
@@ -86,7 +87,8 @@ public class StationProfileSubsetWriterNetcdf extends AbstractStationProfileSubs
 
   @Override
   protected void writeHeader(StationProfileFeature stn) throws Exception {
-    return;
+    cfWriter.writeHeader(wantedStations);
+    headerDone = true;
   }
 
   @Override

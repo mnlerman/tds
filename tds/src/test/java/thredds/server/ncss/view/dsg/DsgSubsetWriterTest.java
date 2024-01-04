@@ -190,6 +190,7 @@ public class DsgSubsetWriterTest {
 
     File datasetFile = new File(getClass().getResource(datasetResource).toURI());
     File expectedResultFile = new File(getClass().getResource(expectedResultResource).toURI());
+    // File expectedResultFile = new File("/Users/lerman/dev/temp/outputAll.ncml");
     File actualResultFile = tempFolder.newFile();
 
     try (FeatureDatasetPoint fdPoint = openPointDataset(wantedType, datasetFile);
